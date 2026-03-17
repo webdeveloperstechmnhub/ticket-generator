@@ -333,18 +333,23 @@
       document.getElementById('passName').value = tt.name;
       document.getElementById('amountPaid').value = tt.price || 0;
 
-      // Auto-sync Category dropdown with ticket type's appliesTo
-      if (tt.appliesTo === 'Visitor') {
+      // Auto-sync Category: treat as Visitor if appliesTo is 'Visitor'
+      // OR if the ticket name contains 'visitor' (handles appliesTo:'All' edge case)
+      const isVisitorTicket =
+        tt.appliesTo === 'Visitor' ||
+        (tt.name && tt.name.toLowerCase().includes('visitor'));
+
+      if (isVisitorTicket) {
         const catSelect = document.getElementById('category');
         catSelect.value = 'Visitor';
-        catSelect.dispatchEvent(new Event('change'));
+        updateCategoryUI('Visitor');
       }
     }
 
-    // ── Misc UI handlers ─────────────────────────────────────────────────────
-    document.getElementById('category').addEventListener('change', function () {
-      const isTeam = this.value === 'Team';
-      const isVisitor = this.value === 'Visitor';
+    // ── Category UI sync (called from both change handler and selectTicketType) ──
+    function updateCategoryUI(catValue) {
+      const isTeam    = catValue === 'Team';
+      const isVisitor = catValue === 'Visitor';
 
       document.getElementById('teamMembersSection').style.display = isTeam ? 'block' : 'none';
       if (!isTeam) {
@@ -359,6 +364,11 @@
       if (isVisitor) {
         document.querySelectorAll('input[name="activities"]').forEach(cb => cb.checked = false);
       }
+    }
+
+    // ── Misc UI handlers ─────────────────────────────────────────────────────
+    document.getElementById('category').addEventListener('change', function () {
+      updateCategoryUI(this.value);
     });
 
     // ── Form submit ──────────────────────────────────────────────────────────
@@ -396,7 +406,13 @@
       };
 
       if (formData.mobile.length !== 10) { showAlert('Please enter a valid 10-digit mobile number', 'error'); return; }
-      if (formData.category !== 'Visitor' && formData.subCategory.length === 0) { showAlert('Please select at least one activity', 'error'); return; }
+
+      // Only require activities when the section is actually visible to the user
+      const activitiesVisible = document.getElementById('activitiesSection').style.display !== 'none';
+      if (activitiesVisible && formData.category !== 'Visitor' && formData.subCategory.length === 0) {
+        showAlert('Please select at least one activity', 'error');
+        return;
+      }
 
       const btn = document.getElementById('generateBtn');
       btn.disabled = true;
