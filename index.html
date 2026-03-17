@@ -132,14 +132,8 @@
         <div class="form-group" id="activitiesSection">
           <label id="activitiesLabel">Activities/Skills *</label>
           <div class="checkbox-group" id="activitiesGroup">
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Hackathon"> Hackathon</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Coding"> Coding</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Design"> Design</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Photography"> Photography</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Dance"> Dance</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Music"> Music</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Drama"> Drama</label>
-            <label class="checkbox-item"><input type="checkbox" name="activities" value="Art"> Art</label>
+            <!-- populated dynamically from event.categories -->
+            <p style="color:#94a3b8;font-size:0.9rem;">Select an event above to load available activities.</p>
           </div>
         </div>
 
@@ -273,10 +267,29 @@
         banner.classList.add('active');
 
         renderTicketTypes(ticketTypes);
+        populateActivities(ev.categories || []);
       } catch (err) {
         showAlert(err.message, 'error');
       }
     });
+
+    // ── Populate activities from event.categories ────────────────────────────
+    function populateActivities(categories) {
+      const group = document.getElementById('activitiesGroup');
+      // Filter out 'Visitor' — it's a participant type, not an activity
+      const activities = (categories || []).filter(function(c) {
+        return c.toLowerCase() !== 'visitor';
+      });
+
+      if (!activities.length) {
+        group.innerHTML = '<p style="color:#94a3b8;font-size:0.9rem;">No activities defined for this event.</p>';
+        return;
+      }
+
+      group.innerHTML = activities.map(function(act) {
+        return '<label class="checkbox-item"><input type="checkbox" name="activities" value="' + act.replace(/"/g, '&quot;') + '"> ' + act + '</label>';
+      }).join('');
+    }
 
     // ── Render ticket-type cards ─────────────────────────────────────────────
     function renderTicketTypes(types) {
@@ -319,6 +332,13 @@
       document.getElementById('passType').value = tt.key;
       document.getElementById('passName').value = tt.name;
       document.getElementById('amountPaid').value = tt.price || 0;
+
+      // Auto-sync Category dropdown with ticket type's appliesTo
+      if (tt.appliesTo === 'Visitor') {
+        const catSelect = document.getElementById('category');
+        catSelect.value = 'Visitor';
+        catSelect.dispatchEvent(new Event('change'));
+      }
     }
 
     // ── Misc UI handlers ─────────────────────────────────────────────────────
