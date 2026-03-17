@@ -129,8 +129,8 @@
           </select>
         </div>
 
-        <div class="form-group">
-          <label>Activities/Skills *</label>
+        <div class="form-group" id="activitiesSection">
+          <label id="activitiesLabel">Activities/Skills *</label>
           <div class="checkbox-group" id="activitiesGroup">
             <label class="checkbox-item"><input type="checkbox" name="activities" value="Hackathon"> Hackathon</label>
             <label class="checkbox-item"><input type="checkbox" name="activities" value="Coding"> Coding</label>
@@ -323,7 +323,22 @@
 
     // ── Misc UI handlers ─────────────────────────────────────────────────────
     document.getElementById('category').addEventListener('change', function () {
-      document.getElementById('teamMembersSection').style.display = this.value === 'Team' ? 'block' : 'none';
+      const isTeam = this.value === 'Team';
+      const isVisitor = this.value === 'Visitor';
+
+      document.getElementById('teamMembersSection').style.display = isTeam ? 'block' : 'none';
+      if (!isTeam) {
+        document.getElementById('teamMembers').value = '';
+      }
+
+      document.getElementById('activitiesSection').style.display = isVisitor ? 'none' : 'block';
+      document.getElementById('activitiesLabel').textContent = isVisitor
+        ? 'Activities/Skills (optional for Visitor)'
+        : 'Activities/Skills *';
+
+      if (isVisitor) {
+        document.querySelectorAll('input[name="activities"]').forEach(cb => cb.checked = false);
+      }
     });
 
     // ── Form submit ──────────────────────────────────────────────────────────
@@ -361,7 +376,7 @@
       };
 
       if (formData.mobile.length !== 10) { showAlert('Please enter a valid 10-digit mobile number', 'error'); return; }
-      if (formData.subCategory.length === 0) { showAlert('Please select at least one activity', 'error'); return; }
+      if (formData.category !== 'Visitor' && formData.subCategory.length === 0) { showAlert('Please select at least one activity', 'error'); return; }
 
       const btn = document.getElementById('generateBtn');
       btn.disabled = true;
