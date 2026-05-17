@@ -120,13 +120,8 @@
         </div>
 
         <div class="form-group">
-          <label>Category *</label>
-          <select id="category" required>
-            <option value="">Select Category</option>
-            <option value="Individual">Individual</option>
-            <option value="Team">Team</option>
-            <option value="Visitor">Visitor</option>
-          </select>
+          <label>Ticket Description *</label>
+          <input type="text" id="ticketDescription" required placeholder="e.g., Individual Participant, Team Leader, Workshop Attendee, etc.">
         </div>
 
         <div class="form-group" id="activitiesSection">
@@ -316,7 +311,7 @@
         card.innerHTML = `
           <div class="tt-name">${tt.name}</div>
           <div class="tt-price">₹${tt.price || 0}</div>
-          <div class="tt-desc">${tt.appliesTo || ''}${tt.description ? ' — ' + tt.description : ''}${soldOut ? '<br><span style="color:#ef4444">Sold Out</span>' : (tt.total > 0 ? '<br><span style="color:#94a3b8">'+tt.remaining+' left</span>' : '')}</div>
+          <div class="tt-desc">${tt.description || 'Standard ticket'}${soldOut ? '<br><span style="color:#ef4444">Sold Out</span>' : (tt.total > 0 ? '<br><span style="color:#94a3b8">'+tt.remaining+' left</span>' : '')}</div>
         `;
         if (!soldOut) {
           card.addEventListener('click', () => selectTicketType(tt));
@@ -332,44 +327,7 @@
       document.getElementById('passType').value = tt.key;
       document.getElementById('passName').value = tt.name;
       document.getElementById('amountPaid').value = tt.price || 0;
-
-      // Auto-sync Category: treat as Visitor if appliesTo is 'Visitor'
-      // OR if the ticket name contains 'visitor' (handles appliesTo:'All' edge case)
-      const isVisitorTicket =
-        tt.appliesTo === 'Visitor' ||
-        (tt.name && tt.name.toLowerCase().includes('visitor'));
-
-      if (isVisitorTicket) {
-        const catSelect = document.getElementById('category');
-        catSelect.value = 'Visitor';
-        updateCategoryUI('Visitor');
-      }
     }
-
-    // ── Category UI sync (called from both change handler and selectTicketType) ──
-    function updateCategoryUI(catValue) {
-      const isTeam    = catValue === 'Team';
-      const isVisitor = catValue === 'Visitor';
-
-      document.getElementById('teamMembersSection').style.display = isTeam ? 'block' : 'none';
-      if (!isTeam) {
-        document.getElementById('teamMembers').value = '';
-      }
-
-      document.getElementById('activitiesSection').style.display = isVisitor ? 'none' : 'block';
-      document.getElementById('activitiesLabel').textContent = isVisitor
-        ? 'Activities/Skills (optional for Visitor)'
-        : 'Activities/Skills *';
-
-      if (isVisitor) {
-        document.querySelectorAll('input[name="activities"]').forEach(cb => cb.checked = false);
-      }
-    }
-
-    // ── Misc UI handlers ─────────────────────────────────────────────────────
-    document.getElementById('category').addEventListener('change', function () {
-      updateCategoryUI(this.value);
-    });
 
     // ── Form submit ──────────────────────────────────────────────────────────
     document.getElementById('ticketForm').addEventListener('submit', async function (e) {
@@ -391,7 +349,7 @@
         city: document.getElementById('city').value.trim(),
         college: document.getElementById('college').value.trim(),
         courseYear: document.getElementById('courseYear').value.trim(),
-        category: document.getElementById('category').value,
+        ticketDescription: document.getElementById('ticketDescription').value.trim(),
         subCategory: Array.from(document.querySelectorAll('input[name="activities"]:checked')).map(cb => cb.value),
         teamMembers: document.getElementById('teamMembers').value.split(',').map(m => m.trim()).filter(Boolean),
         passType: document.getElementById('passType').value,
@@ -407,9 +365,8 @@
 
       if (formData.mobile.length !== 10) { showAlert('Please enter a valid 10-digit mobile number', 'error'); return; }
 
-      // Only require activities when the section is actually visible to the user
-      const activitiesVisible = document.getElementById('activitiesSection').style.display !== 'none';
-      if (activitiesVisible && formData.category !== 'Visitor' && formData.subCategory.length === 0) {
+      // Require at least one activity
+      if (formData.subCategory.length === 0) {
         showAlert('Please select at least one activity', 'error');
         return;
       }
@@ -454,7 +411,7 @@
         <div class="detail-row"><span class="detail-label">Email:</span><span class="detail-value">${u.email}</span></div>
         <div class="detail-row"><span class="detail-label">Mobile:</span><span class="detail-value">${u.mobile}</span></div>
         <div class="detail-row"><span class="detail-label">College:</span><span class="detail-value">${u.college}</span></div>
-        <div class="detail-row"><span class="detail-label">Category:</span><span class="detail-value">${u.category}</span></div>
+        <div class="detail-row"><span class="detail-label">Ticket Description:</span><span class="detail-value">${u.ticketDescription}</span></div>
         <div class="detail-row"><span class="detail-label">Activities:</span><span class="detail-value">${(u.subCategory || []).join(', ')}</span></div>
         ${u.teamMembers && u.teamMembers.length > 0 ? `<div class="detail-row"><span class="detail-label">Team Members:</span><span class="detail-value">${u.teamMembers.join(', ')}</span></div>` : ''}
         <div class="detail-row"><span class="detail-label">Pass Type:</span><span class="detail-value">${u.passName}</span></div>
@@ -510,7 +467,7 @@
       <div class="detail-row"><span class="label">Email:</span><span class="value">${data.email}</span></div>
       <div class="detail-row"><span class="label">Mobile:</span><span class="value">${data.mobile}</span></div>
       <div class="detail-row"><span class="label">College:</span><span class="value">${data.college}</span></div>
-      <div class="detail-row"><span class="label">Category:</span><span class="value">${data.category}</span></div>
+      <div class=\"detail-row\"><span class=\"label\">Ticket Description:</span><span class=\"value\">${data.ticketDescription}</span></div>
       <div class="detail-row"><span class="label">Activities:</span><span class="value">${(data.subCategory || []).join(', ')}</span></div>
       ${data.teamMembers && data.teamMembers.length > 0 ? `<div class="detail-row"><span class="label">Team:</span><span class="value">${data.teamMembers.join(', ')}</span></div>` : ''}
       <div class="detail-row"><span class="label">Pass:</span><span class="value">${data.passName}</span></div>
